@@ -1,0 +1,66 @@
+# .github/workflows/build-windows-exe.yml
+
+name: Build Windows Executable
+
+on:
+  push:
+    branches:
+      - main # Trigger on push to the main branch
+  workflow_dispatch: {} # Allow manual triggering from GitHub UI
+
+jobs:
+  build-windows-exe:
+    runs-on: windows-latest # Use a Windows runner
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4 # Action to check out your code
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9' # Or your desired Python version, e.g., '3.10', '3.11'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt # Install Flask, Flask-Cors
+          pip install pyinstaller # Install PyInstaller separately
+
+      - name: Create static directory for frontend
+        # Ensure the static directory exists, even if empty, for PyInstaller to find it
+        run: |
+          mkdir backend\static # Create directory if it doesn't exist (Windows syntax)
+        shell: cmd
+
+      - name: Copy frontend files to static directory
+        # Copy your index.html, script.js, style.css into backend/static
+        # Adjust these paths if your frontend files are in a different location initially
+        run: |
+          copy index.html backend\static\index.html
+          # If you have separate JS/CSS files, add more copy commands here:
+          # copy script.js backend\static\script.js
+          # copy style.css backend\static\style.css
+        shell: cmd
+        working-directory: ${{ github.workspace }} # Run from the repository root
+
+      - name: Build Windows executable with PyInstaller
+        run: |
+          pyinstaller --onefile --noconsole --add-data "backend/static;static" backend/app.py
+        working-directory: ${{ github.workspace }} # Run from the repository root
+
+      - name: Upload executable as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PortableDNSManager-Windows-Executable
+          path: dist/app.exe # Path to your generated .exe file
+          retention-days: 7 # Keep the artifact for 7 days (optional)
+
+      - name: Clean up build directories (optional)
+        # Cleans up the build and dist folders to keep the workspace tidy
+        if: always()
+        run: |
+          rmdir /s /q build
+          rmdir /s /q dist
+        shell: cmd
+        working-directory: ${{ github.workspace }}

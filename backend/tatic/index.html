@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portable DNS Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .dark-theme {
+            background-color: #353535;
+            color: #ffffff;
+        }
+        .dark-theme .bg-gray-100 {
+            background-color: #1a1a1a;
+        }
+        .dark-theme .bg-white {
+            background-color: #252525;
+        }
+        .dark-theme input, .dark-theme select, .dark-theme textarea, .dark-theme table {
+            background-color: #252525;
+            color: #ffffff;
+            border-color: #4a4a4a;
+        }
+        .dark-theme button {
+            background-color: #4282da; /* A blue shade for buttons */
+            color: white;
+        }
+        .dark-theme button:hover {
+            background-color: #366bbd;
+        }
+        .dark-theme .border-gray-300 {
+            border-color: #4a4a4a;
+        }
+        .dark-theme .text-gray-700 {
+            color: #ccc;
+        }
+        .dark-theme .table-header {
+            background-color: #2f2f2f;
+        }
+        .dark-theme .table-row:nth-child(even) {
+            background-color: #2a2a2a;
+        }
+        .dark-theme .table-row:nth-child(odd) {
+            background-color: #252525;
+        }
+        .dark-theme .highlight {
+            background-color: #4282da;
+            color: white;
+        }
+
+        /* Custom scrollbar for dark theme */
+        .dark-theme ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        .dark-theme ::-webkit-scrollbar-track {
+            background: #2f2f2f;
+            border-radius: 10px;
+        }
+        .dark-theme ::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 10px;
+        }
+        .dark-theme ::-webkit-scrollbar-thumb:hover {
+            background: #777;
+        }
+
+        /* Basic table styling */
+        .table-container {
+            overflow-x: auto;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .data-table th, .data-table td {
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            text-align: left;
+        }
+        .dark-theme .data-table th, .dark-theme .data-table td {
+            border-color: #4a4a4a;
+        }
+        .data-table th {
+            background-color: #f8fafc;
+        }
+        .data-table tbody tr:nth-child(even) {
+            background-color: #f1f5f9;
+        }
+        .dark-theme .data-table th {
+            background-color: #2f2f2f;
+        }
+        .dark-theme .data-table tbody tr:nth-child(even) {
+            background-color: #2a2a2a;
+        }
+        .dark-theme .data-table tbody tr:nth-child(odd) {
+            background-color: #252525;
+        }
+        .data-table td[contenteditable="true"] {
+            cursor: text;
+            background-color: #fff; /* For light theme */
+        }
+        .dark-theme .data-table td[contenteditable="true"] {
+            background-color: #3a3a3a; /* For dark theme */
+        }
+    </style>
+</head>
+<body class="dark-theme p-6 min-h-screen">
+    <div class="max-w-7xl mx-auto bg-gray-800 rounded-lg shadow-xl p-8 space-y-6">
+        <h1 class="text-3xl font-bold text-center mb-6">Portable DNS Manager</h1>
+
+        <!-- Theme Toggle -->
+        <div class="flex justify-end mb-4">
+            <label class="inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="darkThemeToggle" class="sr-only peer" checked>
+                <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border after:border-gray-300 after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Dark Theme</span>
+            </label>
+        </div>
+
+        <!-- Connection and Zone Discovery -->
+        <div id="connectionSection" class="bg-gray-700 p-5 rounded-lg shadow-md space-y-4">
+            <h2 class="text-xl font-semibold mb-3">Connection & Zone Discovery</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+                <div>
+                    <label for="dnsServer" class="block text-sm font-medium text-gray-300">AD DNS Server:</label>
+                    <input type="text" id="dnsServer" value="192.168.1.1" placeholder="e.g., 192.168.1.1" class="mt-1 block w-full p-2 border border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-gray-800 text-white">
+                </div>
+                <div>
+                    <label for="dcLdap" class="block text-sm font-medium text-gray-300">Domain Controller (LDAP):</label>
+                    <input type="text" id="dcLdap" value="dc01.example.com" placeholder="e.g., dc01.example.com" class="mt-1 block w-full p-2 border border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-gray-800 text-white">
+                </div>
+                <div>
+                    <label for="username" class="block text-sm font-medium text-gray-300">Username:</label>
+                    <input type="text" id="username" value="admin@example.com" placeholder="e.g., admin@example.com" class="mt-1 block w-full p-2 border border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-gray-800 text-white">
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-300">Password:</label>
+                    <input type="password" id="password" placeholder="Domain Password" class="mt-1 block w-full p-2 border border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-gray-800 text-white">
+                </div>
+                <!-- Connect button removed as per request for auto-connect -->
+            </div>
+            <p id="connectionStatus" class="text-sm text-gray-400 mt-2">Connecting...</p>
+        </div>
+
+        <div id="mainAppSection" class="bg-gray-700 p-5 rounded-lg shadow-md space-y-4 hidden">
+            <div class="flex items-center space-x-4">
+                <label for="zoneSelect" class="text-sm font-medium text-gray-300">Select Zone:</label>
+                <select id="zoneSelect" class="flex-grow p-2 border border-gray-600 rounded-md shadow-sm bg-gray-800 text-white focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">-- Select a Zone --</option>
+                </select>
+
+                <div class="flex items-center space-x-4 ml-auto">
+                    <label class="inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="manualModeCheckbox" class="sr-only peer">
+                        <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border after:border-gray-300 after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                        <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Manual</span>
+                    </label>
+
+                    <label class="inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="bulkUpdateModeCheckbox" class="sr-only peer">
+                        <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border after:border-gray-300 after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                        <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Bulk Update</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- DNS Records Table (Initially hidden) -->
+        <div id="recordsTableSection" class="bg-gray-700 p-5 rounded-lg shadow-md space-y-4 hidden">
+            <h2 class="text-xl font-semibold mb-3">DNS Records</h2>
+            <div class="flex items-center space-x-4 mt-4">
+                <label for="recordTypeFilter" class="text-sm font-medium text-gray-300">Filter Record Types:</label>
+                <select id="recordTypeFilter" class="p-2 border border-gray-600 rounded-md shadow-sm bg-gray-800 text-white focus:ring-blue-500 focus:border-blue-500">
+                    <option value="All">All</option>
+                    <option value="A" selected>A</option>
+                    <option value="CNAME">CNAME</option>
+                    <option value="MX">MX</option>
+                    <option value="TXT">TXT</option>
+                    <option value="SRV">SRV</option>
+                    <option value="PTR">PTR</option>
+                    <option value="NS">NS</option>
+                </select>
+                <input type="text" id="manualSearchInput" placeholder="Search Hostname or IP" class="mt-1 block p-2 border border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-gray-800 text-white flex-grow">
+                <button id="queryBtn" class="px-4 py-2 bg-gray-600 text-white font-semibold rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                    Refresh
+                </button>
+            </div>
+            <div class="table-container rounded-md border border-gray-600">
+                <table id="recordsTable" class="data-table">
+                    <thead>
+                        <tr>
+                            <th class="table-header w-10"><input type="checkbox" id="selectAllRecordsCheckbox" class="form-checkbox h-4 w-4 text-blue-600"></th> <!-- Header for checkbox -->
+                            <th class="table-header">No.</th>
+                            <th class="table-header">Hostname</th>
+                            <th class="table-header">Record Type</th>
+                            <th class="table-header">Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Records will be dynamically inserted here -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="recordActionButtons" class="flex justify-end space-x-4 hidden">
+                <button id="addRecordBtn" class="px-4 py-2 bg-gray-600 text-white font-semibold rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                    Add New Record
+                </button>
+                <button id="deleteRecordBtn" class="px-4 py-2 bg-red-600 text-white font-semibold rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition ease-in-out duration-150 hidden">
+                    Delete Selected Record(s)
+                </button>
+                <button id="exportRecordsBtn" class="px-4 py-2 bg-gray-600 text-white font-semibold rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                    Export Records to CSV
+                </button>
+                <button id="exportLogsBtn" class="px-4 py-2 bg-gray-600 text-white font-semibold rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150 hidden">
+                    Export Audit Logs
+                </button>
+            </div>
+        </div>
+
+        <!-- Bulk Update Section (Initially hidden) -->
+        <div id="bulkUpdateSection" class="bg-gray-700 p-5 rounded-lg shadow-md space-y-4 hidden">
+            <h2 class="text-xl font-semibold mb-3">File Upload</h2>
+            <div class="flex items-center space-x-4">
+                <button id="uploadFileBtn" class="px-4 py-2 bg-gray-600 text-white font-semibold rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                    Upload
+                </button>
+                <input type="file" id="hiddenFileInput" class="hidden" accept=".xlsx,.txt">
+                <span id="fileNameDisplay" class="text-gray-300 text-sm italic">No file selected</span>
+                <button id="clearBulkBtn" class="px-4 py-2 bg-red-600 text-white font-semibold rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition ease-in-out duration-150 hidden">
+                    Clear
+                </button>
+            </div>
+            <div class="flex items-center space-x-4 mt-4">
+                <label for="bulkRecordTypeFilter" class="text-sm font-medium text-gray-300">Filter Record Types:</label>
+                <select id="bulkRecordTypeFilter" class="p-2 border border-gray-600 rounded-md shadow-sm bg-gray-800 text-white focus:ring-blue-500 focus:border-blue-500">
+                    <option value="All">All</option>
+                    <option value="A">A</option>
+                    <option value="CNAME">CNAME</option>
+                    <option value="MX">MX</option>
+                    <option value="TXT">TXT</option>
+                    <option value="SRV">SRV</option>
+                    <option value="PTR">PTR</option>
+                    <option value="NS">NS</option>
+                </select>
+                <input type="text" id="bulkSearchInput" placeholder="Search Hostname or Value" class="mt-1 block p-2 border border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-gray-800 text-white flex-grow">
+                <button id="bulkRefreshBtn" class="px-4 py-2 bg-gray-600 text-white font-semibold rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150 hidden">
+                    Refresh
+                </button>
+            </div>
+            <div class="table-container rounded-md border border-gray-600">
+                <table id="bulkPreviewTable" class="data-table">
+                    <thead>
+                        <tr>
+                            <th class="table-header w-10"><input type="checkbox" id="bulkSelectAllRecordsCheckbox" class="form-checkbox h-4 w-4 text-blue-600"></th> <!-- Header for checkbox -->
+                            <th class="table-header">No.</th>
+                            <th class="table-header">Hostname</th>
+                            <th class="table-header">Record Type</th>
+                            <th class="table-header">New Value</th>
+                            <th class="table-header">Old Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Bulk preview records will be dynamically inserted here -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="bulkActionButtons" class="flex justify-end space-x-4 hidden">
+                <button id="bulkDeleteRecordBtn" class="px-4 py-2 bg-red-600 text-white font-semibold rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition ease-in-out duration-150 hidden">
+                    Delete Selected Record(s)
+                </button>
+                <button id="bulkExportRecordsBtn" class="px-4 py-2 bg-gray-600 text-white font-semibold rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                    Export Records to CSV
+                </button>
+            </div>
+            <button id="applyBulkBtn" class="w-full px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition ease-in-out duration-150 opacity-50 cursor-not-allowed" disabled>
+                Apply Bulk Changes
+            </button>
+            <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mt-2">
+                <div id="progressBar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <!-- Hidden Dialog for Add/Edit Record -->
+        <div id="recordEditDialog" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+            <div class="bg-gray-800 p-6 rounded-lg shadow-xl w-96 space-y-4">
+                <h3 id="dialogTitle" class="text-xl font-bold mb-4">Add/Edit DNS Record</h3>
+                <label for="dialogHostname" class="block text-sm font-medium text-gray-300">Hostname:</label>
+                <input type="text" id="dialogHostname" class="mt-1 block w-full p-2 border border-gray-600 rounded-md bg-gray-900 text-white">
+
+                <label for="dialogRecordType" class="block text-sm font-medium text-gray-300">Record Type:</label>
+                <select id="dialogRecordType" class="mt-1 block w-full p-2 border border-gray-600 rounded-md bg-gray-900 text-white">
+                    <option value="A">A</option>
+                    <option value="CNAME">CNAME</option>
+                    <option value="MX">MX</option>
+                    <option value="TXT">TXT</option>
+                    <option value="SRV">SRV</option>
+                    <option value="PTR">PTR</option>
+                    <option value="NS">NS</option>
+                </select>
+
+                <label for="dialogValue" class="block text-sm font-medium text-gray-300">Value:</label>
+                <input type="text" id="dialogValue" class="mt-1 block w-full p-2 border border-gray-600 rounded-md bg-gray-900 text-white">
+
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button id="dialogSaveBtn" class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700">Save</button>
+                    <button id="dialogCancelBtn" class="px-4 py-2 bg-gray-500 text-white font-semibold rounded-md hover:bg-gray-600">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Define the backend URL
+        const BACKEND_URL = 'http://127.0.0.1:5000'; // Make sure this matches your Flask app's port
+
+        const darkThemeToggle = document.getElementById('darkThemeToggle');
+        const body = document.body;
+        const connectionSection = document.getElementById('connectionSection');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const mainAppSection = document.getElementById('mainAppSection');
+        const recordsTableSection = document.getElementById('recordsTableSection');
+        const bulkUpdateSection = document.getElementById('bulkUpdateSection');
+
+        const manualModeCheckbox = document.getElementById('manualModeCheckbox');
+        const bulkUpdateModeCheckbox = document.getElementById('bulkUpdateModeCheckbox');
+
+        const queryBtn = document.getElementById('queryBtn'); // Refresh button for Manual
+        const manualSearchInput = document.getElementById('manualSearchInput'); // New search input for Manual
+        const recordsTableBody = document.querySelector('#recordsTable tbody');
+        const selectAllRecordsCheckbox = document.getElementById('selectAllRecordsCheckbox'); // Select all checkbox for Manual
+        const zoneSelect = document.getElementById('zoneSelect');
+        const recordTypeFilter = document.getElementById('recordTypeFilter'); // Filter for Manual
+        const addRecordBtn = document.getElementById('addRecordBtn');
+        const deleteRecordBtn = document.getElementById('deleteRecordBtn'); // Delete button for Manual
+        const exportRecordsBtn = document.getElementById('exportRecordsBtn'); // Export button for Manual
+        const recordActionButtons = document.getElementById('recordActionButtons'); // Group of action buttons for Manual
+
+        const uploadFileBtn = document.getElementById('uploadFileBtn');
+        const hiddenFileInput = document.getElementById('hiddenFileInput');
+        const fileNameDisplay = document.getElementById('fileNameDisplay');
+        const clearBulkBtn = document.getElementById('clearBulkBtn'); // New Clear button for Bulk
+        const bulkRefreshBtn = document.getElementById('bulkRefreshBtn'); // Refresh button for Bulk
+        const bulkSearchInput = document.getElementById('bulkSearchInput'); // New search input for Bulk
+        const bulkRecordTypeFilter = document.getElementById('bulkRecordTypeFilter'); // Filter for Bulk
+        const bulkPreviewTableBody = document.querySelector('#bulkPreviewTable tbody');
+        const bulkSelectAllRecordsCheckbox = document.getElementById('bulkSelectAllRecordsCheckbox'); // Select all checkbox for Bulk
+        const bulkDeleteRecordBtn = document.getElementById('bulkDeleteRecordBtn'); // Delete button for Bulk
+        const bulkExportRecordsBtn = document.getElementById('bulkExportRecordsBtn'); // Export button for Bulk
+        const bulkActionButtons = document.getElementById('bulkActionButtons'); // Group of action buttons for Bulk
+
+        const applyBulkBtn = document.getElementById('applyBulkBtn');
+        const progressBar = document.getElementById('progressBar');
+        const exportLogsBtn = document.getElementById('exportLogsBtn'); // Global Export Audit Logs button
+
+        const recordEditDialog = document.getElementById('recordEditDialog');
+        const dialogTitle = document.getElementById('dialogTitle');
+        const dialogHostname = document.getElementById('dialogHostname');
+        const dialogRecordType = document.getElementById('dialogRecordType');
+        const dialogValue = document.getElementById('dialogValue');
+
+        const dialogSaveBtn = document.getElementById('dialogSaveBtn');
+        const dialogCancelBtn = document.getElementById('dialogCancelBtn');
+
+
+        let currentRecords = []; // Stores all records fetched for the selected zone from backend
+        let displayedRecords = []; // Records currently displayed in the Manual table (can be filtered/searched locally)
+        let bulkPreviewRecords = []; // Records currently displayed in the Bulk preview table (local copy of bulkChangesToApply)
+        let bulkChangesToApply = []; // Stores parsed bulk changes (from file upload)
+        let auditLog = []; // Stores log entries in memory (for export)
+
+        // --- Theme Toggle ---
+        darkThemeToggle.addEventListener('change', () => {
+            if (darkThemeToggle.checked) {
+                body.classList.add('dark-theme');
+            } else {
+                body.classList.remove('dark-theme');
+            }
+        });
+
+        // --- Helper for Logging ---
+        function logAction(level, message) {
+            const timestamp = new Date().toLocaleString();
+            const logEntry = `[${timestamp}] ${level.toUpperCase()} - ${message}`;
+            auditLog.push(logEntry);
+            console.log(logEntry); // Still log to console for debugging
+        }
+
+        // --- Helper for Message Boxes ---
+        function showMessage(title, message, isError = false) {
+            alert(`${title}\n\n${message}`); // Using alert for simplicity in simulation
+            if (isError) {
+                logAction('ERROR', message);
+            } else {
+                logAction('INFO', message);
+            }
+        }
+
+        function showConfirmation(title, message) {
+            return confirm(`${title}\n\n${message}`); // Using confirm for simplicity
+        }
+
+        // --- Backend API Calls ---
+
+        async function connectAndDiscoverZones() {
+            logAction('INFO', "Attempting to connect and discover DNS zones via backend...");
+            connectionStatus.textContent = "Connecting...";
+            const dnsServer = document.getElementById('dnsServer').value;
+            const dcLdap = document.getElementById('dcLdap').value;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/connect`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ dnsServer, dcLdap, username, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    zoneSelect.innerHTML = '<option value="">-- Select a Zone --</option>';
+                    data.zones.forEach(zone => {
+                        const option = document.createElement('option');
+                        option.value = zone;
+                        option.textContent = zone;
+                        zoneSelect.appendChild(option);
+                    });
+
+                    connectionSection.classList.add('hidden');
+                    mainAppSection.classList.remove('hidden');
+                    connectionStatus.textContent = "Connected. Zones discovered.";
+                    showMessage("Success", `Successfully discovered ${data.zones.length} DNS zones.`);
+                    logAction('INFO', `Discovered ${data.zones.length} DNS zones from backend.`);
+                } else {
+                    showMessage("Connection Error", `Failed to connect: ${data.error || 'Unknown error'}`, true);
+                    logAction('ERROR', `Connection failed: ${data.error || 'Unknown error'}`);
+                }
+            } catch (error) {
+                showMessage("Connection Error", `Network error or backend unreachable: ${error.message}`, true);
+                logAction('ERROR', `Network error during connection: ${error.message}`);
+            }
+        }
+
+        async function fetchRecords(zone, recordTypeFilter = 'All', searchTerm = '') {
+            logAction('INFO', `Fetching records for zone '${zone}' from backend (Type: ${recordTypeFilter}, Search: '${searchTerm}')...`);
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/records/${zone}?record_type=${recordTypeFilter}&search_term=${searchTerm}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    currentRecords = data.records; // Store all fetched records
+                    displayManualRecords(currentRecords); // Display them (local filtering will happen on input/select change)
+                    logAction('INFO', `Fetched ${currentRecords.length} records for zone '${zone}' from backend.`);
+                } else {
+                    showMessage("Error", `Failed to fetch records: ${data.error || 'Unknown error'}`, true);
+                    logAction('ERROR', `Failed to fetch records from backend: ${data.error || 'Unknown error'}`);
+                    currentRecords = []; // Clear records on error
+                    displayManualRecords([]);
+                }
+            } catch (error) {
+                showMessage("Network Error", `Failed to fetch records from backend: ${error.message}`, true);
+                logAction('ERROR', `Network error during record fetch: ${error.message}`);
+                currentRecords = [];
+                displayManualRecords([]);
+            }
+        }
+
+        async function addRecordToBackend(zone, recordData) {
+            logAction('INFO', `Attempting to add record via backend: ${recordData.hostname} ${recordData.record_type} ${recordData.value}`);
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/records/${zone}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(recordData)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage("Success", data.message);
+                    logAction('INFO', `Successfully added new record via backend.`);
+                    // Re-fetch and display records to reflect changes
+                    await fetchRecords(zoneSelect.value, recordTypeFilter.value, manualSearchInput.value);
+                    return true;
+                } else {
+                    showMessage("Error", `Failed to add record: ${data.error || 'Unknown error'}`, true);
+                    logAction('ERROR', `Failed to add new record via backend: ${data.error || 'Unknown error'}`);
+                    return false;
+                }
+            } catch (error) {
+                showMessage("Network Error", `Failed to add record via backend: ${error.message}`, true);
+                logAction('ERROR', `Network error during add record: ${error.message}`);
+                return false;
+            }
+        }
+
+        async function updateRecordInBackend(zone, hostname, type, oldValue, newValue) {
+            logAction('INFO', `Attempting to update record via backend: ${hostname} ${type} ${oldValue} -> ${newValue}`);
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/records/${zone}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ hostname, record_type: type, old_value: oldValue, new_value: newValue })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage("Success", data.message);
+                    logAction('INFO', `Successfully updated record via backend: ${hostname} ${type} to ${newValue}.`);
+                    // Re-fetch and display records to reflect changes
+                    await fetchRecords(zoneSelect.value, recordTypeFilter.value, manualSearchInput.value);
+                    return true;
+                } else {
+                    showMessage("Error", `Failed to update record: ${data.error || 'Unknown error'}`, true);
+                    logAction('ERROR', `Failed to update record via backend: ${data.error || 'Unknown error'}`);
+                    return false;
+                }
+            } catch (error) {
+                showMessage("Network Error", `Failed to update record via backend: ${error.message}`, true);
+                logAction('ERROR', `Network error during update record: ${error.message}`);
+                return false;
+            }
+        }
+
+        async function deleteRecordsFromBackend(zone, recordsToDelete) {
+            logAction('INFO', `Attempting to delete ${recordsToDelete.length} records via backend...`);
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/records/${zone}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ records: recordsToDelete })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage("Deletion Complete", data.message);
+                    logAction('INFO', `Successfully deleted records via backend.`);
+                    // Re-fetch and display records to reflect changes
+                    await fetchRecords(zoneSelect.value, recordTypeFilter.value, manualSearchInput.value);
+                } else {
+                    showMessage("Error", `Failed to delete records: ${data.error || 'Unknown error'}`, true);
+                    logAction('ERROR', `Failed to delete records via backend: ${data.error || 'Unknown error'}`);
+                }
+            } catch (error) {
+                showMessage("Network Error", `Failed to delete records via backend: ${error.message}`, true);
+                logAction('ERROR', `Network error during delete records: ${error.message}`);
+            }
+        }
+
+        async function applyBulkChangesToBackend(zone, changes) {
+            logAction('INFO', `Starting bulk update for ${changes.length} records via backend...`);
+            applyBulkBtn.disabled = true;
+            applyBulkBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            progressBar.style.width = '0%';
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/bulk_update/${zone}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ changes: changes })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage("Bulk Update Complete", data.message);
+                    logAction('INFO', `Bulk update finished via backend.`);
+                    // After bulk apply, refresh the main records view to reflect changes
+                    await fetchRecords(zoneSelect.value, recordTypeFilter.value, manualSearchInput.value);
+                } else {
+                    showMessage("Error", `Bulk update failed: ${data.error || 'Unknown error'}`, true);
+                    logAction('ERROR', `Bulk update failed via backend: ${data.error || 'Unknown error'}`);
+                }
+            } catch (error) {
+                showMessage("Network Error", `Failed to apply bulk changes via backend: ${error.message}`, true);
+                logAction('ERROR', `Network error during bulk update: ${error.message}`);
+            } finally {
+                applyBulkBtn.disabled = false;
+                applyBulkBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                progressBar.style.width = '100%'; // Complete progress bar regardless of success/failure
+            }
+        }
+
+        async function fetchAuditLogs() {
+            logAction('INFO', "Fetching audit logs from backend...");
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/audit_logs`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    auditLog = data.logs; // Update local audit log with fetched data
+                    logAction('INFO', `Fetched ${auditLog.length} audit log entries.`);
+                    // Simulate file download (same as before, but using fetched data)
+                    const logContent = auditLog.join('\n');
+                    const blob = new Blob([logContent], { type: 'text/plain;charset=utf-8;' });
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.setAttribute('download', 'audit_log.txt');
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    showMessage("Export Success", "Audit logs successfully exported to audit_log.txt (simulated download).");
+                } else {
+                    showMessage("Error", `Failed to fetch audit logs: ${data.error || 'Unknown error'}`, true);
+                    logAction('ERROR', `Failed to fetch audit logs from backend: ${data.error || 'Unknown error'}`);
+                }
+            } catch (error) {
+                showMessage("Network Error", `Failed to fetch audit logs from backend: ${error.message}`, true);
+                logAction('ERROR', `Network error during audit log fetch: ${error.message}`);
+            }
+        }
+
+
+        // --- Display Functions ---
+        function displayManualRecords(recordsToDisplay) {
+            recordsTableBody.innerHTML = '';
+            displayedRecords = recordsToDisplay;
+            selectAllRecordsCheckbox.checked = false;
+            if (recordsToDisplay.length === 0) {
+                const row = recordsTableBody.insertRow();
+                const cell = row.insertCell(0);
+                cell.colSpan = 5; // Span across all columns
+                cell.textContent = "No records found for the selected zone or filter criteria.";
+                cell.classList.add('text-center', 'italic', 'py-4', 'text-gray-400');
+            } else {
+                recordsToDisplay.forEach((record, index) => {
+                    const row = recordsTableBody.insertRow();
+                    row.classList.add('table-row');
+                    const checkboxCell = row.insertCell(0);
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.className = 'record-checkbox form-checkbox h-4 w-4 text-blue-600';
+                    checkboxCell.appendChild(checkbox);
+
+                    row.insertCell(1).textContent = index + 1;
+                    row.insertCell(2).textContent = record.hostname;
+                    row.insertCell(3).textContent = record.record_type;
+                    const valueCell = row.insertCell(4);
+                    valueCell.textContent = record.value;
+                    if (record.record_type === 'A' || record.record_type === 'CNAME') {
+                        valueCell.contentEditable = "true";
+                        valueCell.dataset.originalValue = record.value;
+                        valueCell.addEventListener('blur', (e) => handleInlineEdit(e, index, 4));
+                        valueCell.addEventListener('keydown', (e) => {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                e.target.blur();
+                            }
+                        });
+                    }
+                });
+            }
+            logAction('INFO', `Displaying ${recordsToDisplay.length} records in Manual table.`);
+            updateManualDeleteButtonVisibility();
+        }
+
+        function displayBulkPreviewRecords(recordsToDisplay) {
+            bulkPreviewTableBody.innerHTML = '';
+            bulkPreviewRecords = recordsToDisplay;
+            bulkSelectAllRecordsCheckbox.checked = false;
+            if (recordsToDisplay.length === 0) {
+                const row = bulkPreviewTableBody.insertRow();
+                const cell = row.insertCell(0);
+                cell.colSpan = 6; // Span across all columns
+                cell.textContent = "No bulk changes loaded or matching filter criteria.";
+                cell.classList.add('text-center', 'italic', 'py-4', 'text-gray-400');
+            } else {
+                recordsToDisplay.forEach((record, index) => {
+                    const row = bulkPreviewTableBody.insertRow();
+                    row.classList.add('table-row');
+                    const checkboxCell = row.insertCell(0);
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.className = 'bulk-record-checkbox form-checkbox h-4 w-4 text-blue-600';
+                    checkboxCell.appendChild(checkbox);
+
+                    row.insertCell(1).textContent = index + 1;
+                    row.insertCell(2).textContent = record.hostname;
+                    row.insertCell(3).textContent = record.record_type;
+                    const newValueCell = row.insertCell(4);
+                    newValueCell.textContent = record.new_value;
+                    newValueCell.contentEditable = "true";
+                    newValueCell.dataset.originalValue = record.new_value;
+                    newValueCell.addEventListener('blur', (e) => handleBulkInlineEdit(e, index, 4));
+                    newValueCell.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            e.target.blur();
+                        }
+                    });
+                    row.insertCell(5).textContent = record.old_value || 'N/A';
+                });
+            }
+            logAction('INFO', `Displaying ${recordsToDisplay.length} records in Bulk Preview table.`);
+            updateBulkDeleteButtonVisibility();
+        }
+
+
+        function updateManualDeleteButtonVisibility() {
+            const checkedCheckboxes = recordsTableBody.querySelectorAll('input.record-checkbox:checked');
+            if (checkedCheckboxes.length > 0) {
+                deleteRecordBtn.classList.remove('hidden');
+            } else {
+                deleteRecordBtn.classList.add('hidden');
+            }
+        }
+
+        function updateBulkDeleteButtonVisibility() {
+            const checkedCheckboxes = bulkPreviewTableBody.querySelectorAll('input.bulk-record-checkbox:checked');
+            if (checkedCheckboxes.length > 0) {
+                bulkDeleteRecordBtn.classList.remove('hidden');
+            } else {
+                bulkDeleteRecordBtn.classList.add('hidden');
+            }
+        }
+
+        function updateManualSelectAllCheckboxState() {
+            const allCheckboxes = recordsTableBody.querySelectorAll('input.record-checkbox');
+            const checkedCheckboxes = recordsTableBody.querySelectorAll('input.record-checkbox:checked');
+            if (allCheckboxes.length > 0 && allCheckboxes.length === checkedCheckboxes.length) {
+                selectAllRecordsCheckbox.checked = true;
+            } else {
+                selectAllRecordsCheckbox.checked = false;
+            }
+        }
+
+        function updateBulkSelectAllCheckboxState() {
+            const allCheckboxes = bulkPreviewTableBody.querySelectorAll('input.bulk-record-checkbox');
+            const checkedCheckboxes = bulkPreviewTableBody.querySelectorAll('input.bulk-record-checkbox:checked');
+            if (allCheckboxes.length > 0 && allCheckboxes.length === checkedCheckboxes.length) {
+                bulkSelectAllRecordsCheckbox.checked = true;
+            } else {
+                bulkSelectAllRecordsCheckbox.checked = false;
+            }
+        }
+
+        function applyManualFiltersAndSearch() {
+            const selectedType = recordTypeFilter.value;
+            const searchTerm = manualSearchInput.value.toLowerCase();
+
+            let filtered = currentRecords;
+
+            // Apply type filter
+            if (selectedType !== 'All') {
+                filtered = filtered.filter(rec => rec.record_type === selectedType);
+            }
+
+            // Apply search filter
+            if (searchTerm) {
+                filtered = filtered.filter(rec => {
+                    const hostnameMatch = rec.hostname.toLowerCase().includes(searchTerm);
+                    const valueMatch = rec.value.toLowerCase().includes(searchTerm);
+                    return hostnameMatch || valueMatch;
+                });
+            }
+            displayManualRecords(filtered);
+        }
+
+        function applyBulkFiltersAndSearch() {
+            const selectedType = bulkRecordTypeFilter.value;
+            const searchTerm = bulkSearchInput.value.toLowerCase();
+
+            let filtered = bulkChangesToApply;
+
+            // Apply type filter
+            if (selectedType !== 'All') {
+                filtered = filtered.filter(change => change.record_type === selectedType);
+            }
+
+            // Apply search filter
+            if (searchTerm) {
+                filtered = filtered.filter(change => {
+                    const hostnameMatch = change.hostname.toLowerCase().includes(searchTerm);
+                    const newValueMatch = change.new_value.toLowerCase().includes(searchTerm);
+                    const oldValueMatch = (change.old_value || '').toLowerCase().includes(searchTerm);
+                    return hostnameMatch || newValueMatch || oldValueMatch;
+                });
+            }
+            displayBulkPreviewRecords(filtered);
+        }
+
+
+        // --- Event Listeners ---
+        document.addEventListener('DOMContentLoaded', connectAndDiscoverZones); // Auto-connect on load
+
+        manualModeCheckbox.addEventListener('change', () => {
+            if (manualModeCheckbox.checked) {
+                bulkUpdateModeCheckbox.checked = false; // Uncheck bulk if manual is checked
+                recordsTableSection.classList.remove('hidden'); // Show records table
+                bulkUpdateSection.classList.add('hidden'); // Hide bulk update section
+                recordActionButtons.classList.remove('hidden'); // Show manual action buttons
+                bulkActionButtons.classList.add('hidden'); // Hide bulk action buttons
+                if (zoneSelect.value) {
+                    fetchRecords(zoneSelect.value, recordTypeFilter.value, manualSearchInput.value); // Fetch and display records from backend
+                }
+            } else {
+                recordsTableSection.classList.add('hidden'); // Hide records table
+                recordActionButtons.classList.add('hidden'); // Hide manual action buttons
+            }
+            updateManualDeleteButtonVisibility(); // Ensure delete button state is correct on mode change
+        });
+
+        bulkUpdateModeCheckbox.addEventListener('change', () => {
+            if (bulkUpdateModeCheckbox.checked) {
+                manualModeCheckbox.checked = false; // Uncheck manual if bulk is checked
+                bulkUpdateSection.classList.remove('hidden'); // Show bulk update section
+                recordsTableSection.classList.add('hidden'); // Hide records table
+                recordActionButtons.classList.add('hidden'); // Hide manual action buttons
+                bulkActionButtons.classList.remove('hidden'); // Show bulk action buttons (initially hidden until file upload)
+                // Bulk mode doesn't auto-fetch, it relies on file upload. Display current bulk preview if any.
+                displayBulkPreviewRecords(bulkChangesToApply);
+            } else {
+                bulkUpdateSection.classList.add('hidden'); // Hide bulk update section
+                bulkActionButtons.classList.add('hidden'); // Hide bulk action buttons
+            }
+            updateBulkDeleteButtonVisibility(); // Ensure delete button state is correct on mode change
+        });
+
+
+        queryBtn.addEventListener('click', () => { // "Refresh" button for Manual
+            if (zoneSelect.value) {
+                fetchRecords(zoneSelect.value, recordTypeFilter.value, manualSearchInput.value);
+            } else {
+                showMessage("Refresh Error", "Please select a DNS zone first.");
+            }
+        });
+
+        bulkRefreshBtn.addEventListener('click', () => { // "Refresh" button for Bulk
+            if (bulkChangesToApply.length > 0) {
+                applyBulkFiltersAndSearch(); // Just re-display current bulk data with filters
+            } else {
+                showMessage("Refresh Error", "Please load a bulk update file first.");
+            }
+        });
+
+        // Manual Search Input and Filter
+        manualSearchInput.addEventListener('input', applyManualFiltersAndSearch);
+        recordTypeFilter.addEventListener('change', applyManualFiltersAndSearch);
+
+        // Bulk Search Input and Filter
+        bulkSearchInput.addEventListener('input', applyBulkFiltersAndSearch);
+        bulkRecordTypeFilter.addEventListener('change', applyBulkFiltersAndSearch);
+
+
+        zoneSelect.addEventListener('change', () => {
+            if (zoneSelect.value) {
+                logAction('INFO', `Selected DNS Zone: ${zoneSelect.value}`);
+                // If a mode is already selected, re-trigger its display logic
+                if (manualModeCheckbox.checked) {
+                    fetchRecords(zoneSelect.value, recordTypeFilter.value, manualSearchInput.value);
+                } else if (bulkUpdateModeCheckbox.checked) {
+                    // No specific action needed for bulk update on zone change, just ensures section is visible
+                    displayBulkPreviewRecords(bulkChangesToApply); // Re-display current bulk data
+                } else {
+                    // Reset UI if no mode is selected
+                    recordsTableSection.classList.add('hidden');
+                    bulkUpdateSection.classList.add('hidden');
+                    recordsTableBody.innerHTML = ''; // Clear table
+                    bulkPreviewTableBody.innerHTML = ''; // Clear bulk table
+                }
+            } else {
+                recordsTableSection.classList.add('hidden');
+                bulkUpdateSection.classList.add('hidden');
+                recordsTableBody.innerHTML = ''; // Clear table
+                bulkPreviewTableBody.innerHTML = ''; // Clear bulk table
+            }
+            updateManualDeleteButtonVisibility(); // Ensure delete button state is correct on zone change
+            updateBulkDeleteButtonVisibility(); // Ensure delete button state is correct on zone change
+        });
+
+
+        // Event listener for the "select all" checkbox in the manual table header
+        selectAllRecordsCheckbox.addEventListener('change', (event) => {
+            const isChecked = event.target.checked;
+            recordsTableBody.querySelectorAll('input.record-checkbox').forEach(checkbox => {
+                checkbox.checked = isChecked;
+                checkbox.closest('tr').classList.toggle('highlight', isChecked);
+            });
+            updateManualDeleteButtonVisibility();
+        });
+
+        // Event listener for individual checkbox changes in manual table to toggle delete button visibility and select-all state
+        recordsTableBody.addEventListener('change', (event) => {
+            if (event.target.type === 'checkbox' && event.target.classList.contains('record-checkbox')) {
+                event.target.closest('tr').classList.toggle('highlight', event.target.checked);
+                updateManualDeleteButtonVisibility();
+                updateManualSelectAllCheckboxState(); // Update the select all checkbox state
+            }
+        });
+
+        // Event listener for the "select all" checkbox in the bulk table header
+        bulkSelectAllRecordsCheckbox.addEventListener('change', (event) => {
+            const isChecked = event.target.checked;
+            bulkPreviewTableBody.querySelectorAll('input.bulk-record-checkbox').forEach(checkbox => {
+                checkbox.checked = isChecked;
+                checkbox.closest('tr').classList.toggle('highlight', isChecked);
+            });
+            updateBulkDeleteButtonVisibility();
+        });
+
+        // Event listener for individual checkbox changes in bulk table to toggle delete button visibility and select-all state
+        bulkPreviewTableBody.addEventListener('change', (event) => {
+            if (event.target.type === 'checkbox' && event.target.classList.contains('bulk-record-checkbox')) {
+                event.target.closest('tr').classList.toggle('highlight', event.target.checked);
+                updateBulkDeleteButtonVisibility();
+                updateBulkSelectAllCheckboxState(); // Update the select all checkbox state
+            }
+        });
+
+
+        function handleInlineEdit(event, rowIndex, colIndex) { // For Manual Table
+            const currentZone = zoneSelect.value;
+            if (!currentZone) {
+                showMessage("Invalid Edit", "Please select a DNS zone first.", true);
+                event.target.textContent = event.target.dataset.originalValue; // Revert
+                return;
+            }
+
+            const newValue = event.target.textContent.trim();
+            const originalRecord = displayedRecords[rowIndex];
+            const hostname = originalRecord.hostname;
+            const recordType = originalRecord.record_type;
+            const oldValue = event.target.dataset.originalValue;
+
+            if (newValue === oldValue) {
+                return; // No change
+            }
+
+            if (colIndex === 4) { // Value column
+                if (showConfirmation("Confirm Update",
+                                      `Are you sure you want to update record:\n` +
+                                      `Hostname: ${hostname}\n` +
+                                      `Type: ${recordType}\n` +
+                                      `Old Value: ${oldValue}\n` +
+                                      `New Value: ${newValue}?`)) {
+                    updateRecordInBackend(currentZone, hostname, recordType, oldValue, newValue)
+                        .then(success => {
+                            if (!success) {
+                                event.target.textContent = oldValue; // Revert on failure
+                            }
+                            // Re-fetch and display records is handled inside updateRecordInBackend
+                        })
+                        .catch(error => {
+                            showMessage("Update Error", `An error occurred: ${error.message}`, true);
+                            event.target.textContent = oldValue; // Revert on error
+                        });
+                } else {
+                    event.target.textContent = oldValue; // Revert if user cancels
+                }
+            } else {
+                showMessage("Invalid Edit", "Only 'Value' can be inline edited. For other changes, use Add/Delete or Bulk Update.", true);
+                event.target.textContent = originalRecord.value; // Revert to the value from the original record object
+            }
+        }
+
+        function handleBulkInlineEdit(event, rowIndex, colIndex) { // For Bulk Update Table
+            const currentZone = zoneSelect.value;
+            if (!currentZone) {
+                showMessage("Invalid Edit", "Please select a DNS zone first.", true);
+                event.target.textContent = event.target.dataset.originalValue; // Revert
+                return;
+            }
+
+            const newValue = event.target.textContent.trim();
+            const originalChange = bulkPreviewRecords[rowIndex];
+            const hostname = originalChange.hostname;
+            const recordType = originalChange.record_type;
+            const oldValue = event.target.dataset.originalValue; // This is the old "new_value"
+
+            if (newValue === oldValue) {
+                return; // No change
+            }
+
+            if (colIndex === 4) { // New Value column
+                if (showConfirmation("Confirm Change",
+                                      `Are you sure you want to change the 'New Value' for record:\n` +
+                                      `Hostname: ${hostname}\n` +
+                                      `Type: ${recordType}\n` +
+                                      `Old 'New Value': ${oldValue}\n` +
+                                      `New 'New Value': ${newValue}?`)) {
+                    // Update the underlying bulkChangesToApply array
+                    const recordToUpdateIndex = bulkChangesToApply.findIndex(rec =>
+                        rec.hostname === originalChange.hostname &&
+                        rec.record_type === originalChange.record_type &&
+                        rec.new_value === oldValue
+                    );
+
+                    if (recordToUpdateIndex !== -1) {
+                        bulkChangesToApply[recordToUpdateIndex].new_value = newValue;
+                        event.target.dataset.originalValue = newValue;
+                        showMessage("Change Saved", "Change to bulk update record saved in preview.");
+                        logAction('INFO', `User: GUI_User, Action: BULK_PREVIEW_EDIT, Details: Edited bulk preview record: ${hostname} ${recordType} from ${oldValue} to ${newValue}`);
+                    } else {
+                        showMessage("Error", "Could not find the record to update in bulk data.", true);
+                        event.target.textContent = oldValue;
+                    }
+                } else {
+                    event.target.textContent = oldValue;
+                }
+            } else {
+                showMessage("Invalid Edit", "Only 'New Value' can be inline edited in bulk preview.", true);
+                event.target.textContent = originalChange.new_value;
+            }
+        }
+
+
+        addRecordBtn.addEventListener('click', () => {
+            if (!zoneSelect.value) {
+                showMessage("Add Record Error", "Please select a DNS zone first.");
+                return;
+            }
+
+            dialogTitle.textContent = "Add New DNS Record";
+            dialogHostname.value = '';
+            dialogRecordType.value = 'A';
+            dialogValue.value = '';
+            recordEditDialog.classList.remove('hidden');
+
+            const onSave = () => {
+                const hostname = dialogHostname.value.trim();
+                const recordType = dialogRecordType.value.trim().toUpperCase();
+                const value = dialogValue.value.trim();
+                const ttl = 'N/A'; // TTL is not in UI, hardcode for backend
+
+                if (!hostname || !recordType || !value) {
+                    showMessage("Input Error", "Please fill all fields correctly.", true);
+                    return;
+                }
+
+                if (showConfirmation("Confirm Add",
+                                      `Are you sure you want to add record:\n` +
+                                      `Hostname: ${hostname}\n` +
+                                      `Type: ${recordType}\n` +
+                                      `Value: ${value}?`)) {
+                    addRecordToBackend(zoneSelect.value, { hostname, record_type: recordType, value, ttl });
+                    recordEditDialog.classList.add('hidden');
+                    dialogSaveBtn.removeEventListener('click', onSave);
+                }
+            };
+
+            dialogSaveBtn.addEventListener('click', onSave);
+            dialogCancelBtn.addEventListener('click', () => {
+                recordEditDialog.classList.add('hidden');
+                dialogSaveBtn.removeEventListener('click', onSave);
+            }, { once: true });
+        });
+
+        deleteRecordBtn.addEventListener('click', () => { // For Manual Table
+            if (!zoneSelect.value) {
+                showMessage("Delete Error", "Please select a DNS zone first.");
+                return;
+            }
+
+            const selectedRecords = [];
+            recordsTableBody.querySelectorAll('tr').forEach((row, index) => {
+                const checkbox = row.cells[0].querySelector('input[type="checkbox"]');
+                if (checkbox && checkbox.checked) {
+                    selectedRecords.push(displayedRecords[index]);
+                }
+            });
+
+            if (selectedRecords.length === 0) {
+                showMessage("Delete Error", "Please select at least one record to delete.");
+                return;
+            }
+
+            let confirmMsg = "Are you sure you want to delete the following records?\n\n";
+            selectedRecords.forEach(rec => {
+                confirmMsg += `- ${rec.hostname} (${rec.record_type}): ${rec.value}\n`;
+            });
+
+            if (showConfirmation("Confirm Deletion", confirmMsg)) {
+                deleteRecordsFromBackend(zoneSelect.value, selectedRecords);
+            }
+        });
+
+        bulkDeleteRecordBtn.addEventListener('click', () => { // For Bulk Update Table
+            if (!zoneSelect.value) {
+                showMessage("Delete Error", "Please select a DNS zone first.");
+                return;
+            }
+
+            const recordsToDeleteFromBulkPreview = [];
+            const newBulkChangesToApply = [];
+
+            bulkPreviewTableBody.querySelectorAll('tr').forEach((row, index) => {
+                const checkbox = row.cells[0].querySelector('input[type="checkbox"]');
+                if (checkbox && checkbox.checked) {
+                    recordsToDeleteFromBulkPreview.push(bulkPreviewRecords[index]);
+                } else {
+                    newBulkChangesToApply.push(bulkPreviewRecords[index]);
+                }
+            });
+
+            if (recordsToDeleteFromBulkPreview.length === 0) {
+                showMessage("Delete Error", "Please select at least one record to delete from the bulk preview.");
+                return;
+            }
+
+            let confirmMsg = "Are you sure you want to remove the following records from the bulk update list?\n\n";
+            recordsToDeleteFromBulkPreview.forEach(rec => {
+                confirmMsg += `- ${rec.hostname} (${rec.record_type}): New Value: ${rec.new_value}, Old Value: ${rec.old_value || 'N/A'}\n`;
+            });
+
+            if (showConfirmation("Confirm Removal", confirmMsg)) {
+                bulkChangesToApply = newBulkChangesToApply;
+                displayBulkPreviewRecords(bulkChangesToApply);
+                showMessage("Records Removed", `${recordsToDeleteFromBulkPreview.length} records removed from bulk update list.`);
+                logAction('INFO', `User: GUI_User, Action: BULK_PREVIEW_DELETE, Details: Removed ${recordsToDeleteFromBulkPreview.length} records from bulk preview.`);
+            }
+        });
+
+
+        exportRecordsBtn.addEventListener('click', () => { // For Manual Table
+            const recordsToExport = recordsTableBody.querySelectorAll('input.record-checkbox:checked').length > 0
+                                    ? Array.from(recordsTableBody.querySelectorAll('input.record-checkbox:checked')).map(checkbox => {
+                                        const row = checkbox.closest('tr');
+                                        return {
+                                            hostname: row.cells[2].textContent,
+                                            record_type: row.cells[3].textContent,
+                                            value: row.cells[4].textContent,
+                                        };
+                                    })
+                                    : displayedRecords;
+
+            if (recordsToExport.length === 0) {
+                showMessage("Export Error", "No records to export.");
+                return;
+            }
+            const csvContent = "Hostname,Record Type,Value\n" +
+                               recordsToExport.map(rec => `${rec.hostname},${rec.record_type},"${rec.value}"`).join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.setAttribute('download', 'dns_records.csv');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showMessage("Export Success", "Records successfully exported to dns_records.csv.");
+            logAction('INFO', `User: GUI_User, Action: EXPORT_RECORDS, Details: Exported ${recordsToExport.length} records to dns_records.csv from ${zoneSelect.value}`);
+        });
+
+        bulkExportRecordsBtn.addEventListener('click', () => { // For Bulk Update Table
+            const recordsToExport = bulkPreviewTableBody.querySelectorAll('input.bulk-record-checkbox:checked').length > 0
+                                    ? Array.from(bulkPreviewTableBody.querySelectorAll('input.bulk-record-checkbox:checked')).map(checkbox => {
+                                        const row = checkbox.closest('tr');
+                                        return {
+                                            hostname: row.cells[2].textContent,
+                                            record_type: row.cells[3].textContent,
+                                            new_value: row.cells[4].textContent,
+                                            old_value: row.cells[5].textContent === 'N/A' ? '' : row.cells[5].textContent
+                                        };
+                                    })
+                                    : bulkPreviewRecords;
+
+            if (recordsToExport.length === 0) {
+                showMessage("Export Error", "No records to export from bulk preview.");
+                return;
+            }
+            const csvContent = "Hostname,Record Type,New Value,Old Value\n" +
+                               recordsToExport.map(rec => `${rec.hostname},${rec.record_type},"${rec.new_value}","${rec.old_value}"`).join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.setAttribute('download', 'bulk_dns_changes_preview.csv');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showMessage("Export Success", "Bulk changes preview successfully exported to bulk_dns_changes_preview.csv.");
+            logAction('INFO', `User: GUI_User, Action: EXPORT_BULK_PREVIEW, Details: Exported ${recordsToExport.length} bulk changes preview to bulk_dns_changes_preview.csv`);
+        });
+
+
+        uploadFileBtn.addEventListener('click', () => {
+            hiddenFileInput.click(); // Trigger the hidden file input
+        });
+
+        hiddenFileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                fileNameDisplay.textContent = file.name;
+                logAction('INFO', `Selected bulk update file: ${file.name}`);
+                applyBulkBtn.disabled = false;
+                applyBulkBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                clearBulkBtn.classList.remove('hidden'); // Show clear button
+                bulkRefreshBtn.classList.remove('hidden'); // Show refresh button
+                bulkSearchInput.classList.remove('hidden'); // Show search input
+                bulkRecordTypeFilter.classList.remove('hidden'); // Show filter
+                bulkActionButtons.classList.remove('hidden'); // Show bulk action buttons
+
+                // Simulate parsing file content - In a real app, you'd parse the actual file content here
+                const dummyFileContent = [
+                    { hostname: 'web01.example.com', record_type: 'A', new_value: '192.168.1.10', old_value: '192.168.1.5' },
+                    { hostname: 'api.example.com', record_type: 'CNAME', new_value: 'web01.example.com', old_value: null },
+                    { hostname: 'newserver.example.com', record_type: 'A', new_value: '10.0.0.50', old_value: null },
+                    { hostname: 'oldserver.example.com', record_type: 'A', new_value: '10.0.0.51', old_value: '10.0.0.49' },
+                    { hostname: 'another.example.com', record_type: 'TXT', new_value: 'new text record', old_value: 'old text record' }
+                ];
+                bulkChangesToApply = dummyFileContent; // Store for application
+                applyBulkFiltersAndSearch(); // Display in the table with any initial filters/search
+
+            } else {
+                fileNameDisplay.textContent = 'No file selected';
+                bulkPreviewTableBody.innerHTML = '';
+                applyBulkBtn.disabled = true;
+                applyBulkBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                clearBulkBtn.classList.add('hidden'); // Hide clear button
+                bulkRefreshBtn.classList.add('hidden'); // Hide refresh button
+                bulkSearchInput.classList.add('hidden'); // Hide search input
+                bulkRecordTypeFilter.classList.add('hidden'); // Hide filter
+                bulkActionButtons.classList.add('hidden'); // Hide bulk action buttons
+                bulkChangesToApply = []; // Clear data
+                showMessage("File Upload", "No file selected.", true);
+            }
+        });
+
+        clearBulkBtn.addEventListener('click', () => {
+            if (showConfirmation("Clear Bulk Data", "Are you sure you want to clear all loaded bulk update information?")) {
+                hiddenFileInput.value = ''; // Clear file input
+                fileNameDisplay.textContent = 'No file selected';
+                bulkPreviewTableBody.innerHTML = '';
+                applyBulkBtn.disabled = true;
+                applyBulkBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                clearBulkBtn.classList.add('hidden'); // Hide clear button
+                bulkRefreshBtn.classList.add('hidden'); // Hide refresh button
+                bulkSearchInput.classList.add('hidden'); // Hide search input
+                bulkRecordTypeFilter.classList.add('hidden'); // Hide filter
+                bulkActionButtons.classList.add('hidden'); // Hide bulk action buttons
+                bulkChangesToApply = []; // Clear data
+                showMessage("Cleared", "Bulk update information cleared.");
+                logAction('INFO', `User: GUI_User, Action: CLEAR_BULK_DATA, Details: Bulk update information cleared.`);
+            }
+        });
+
+
+        applyBulkBtn.addEventListener('click', () => {
+            if (!zoneSelect.value) {
+                showMessage("Bulk Update Error", "Please select a DNS zone first before applying bulk changes.");
+                return;
+            }
+            if (bulkChangesToApply.length === 0) {
+                showMessage("Bulk Update Error", "No changes loaded for bulk update. Please upload a file first.");
+                return;
+            }
+
+            if (showConfirmation("Confirm Bulk Update",
+                                  `Are you sure you want to apply ${bulkChangesToApply.length} bulk changes to zone '${zoneSelect.value}'?`)) {
+                applyBulkChangesToBackend(zoneSelect.value, bulkChangesToApply);
+            }
+        });
+
+        exportLogsBtn.addEventListener('click', fetchAuditLogs); // Now calls the backend to get logs
+
+        // Initial setup on load
+        document.addEventListener('DOMContentLoaded', connectAndDiscoverZones);
+
+    </script>
+</body>
+</html>
