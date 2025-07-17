@@ -26,27 +26,24 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r backend/requirements.txt # Install Flask, Flask-Cors
           pip install pyinstaller # Install PyInstaller separately
+        shell: pwsh # Use PowerShell for improved script execution
 
       - name: Create static directory for frontend
         # Ensure the static directory exists, even if empty, for PyInstaller to find it
+        # This step is mostly for robustness; ideally, backend/static already exists with your frontend files.
         run: |
-          mkdir backend\static # Create directory if it doesn't exist (Windows syntax)
-        shell: cmd
+          New-Item -ItemType Directory -Force -Path "backend/static"
+        shell: pwsh # Use PowerShell for directory creation
 
-      - name: Copy frontend files to static directory
-        # Copy your index.html, script.js, style.css into backend/static
-        # Adjust these paths if your frontend files are in a different location initially
-        run: |
-          copy index.html backend\static\index.html
-          # If you have separate JS/CSS files, add more copy commands here:
-          # copy script.js backend\static\script.js
-          # copy style.css backend\static\style.css
-        shell: cmd
-        working-directory: ${{ github.workspace }} # Run from the repository root
+      # NOTE: The 'Copy frontend files to static directory' step has been removed.
+      # Please ensure your index.html, script.js, and style.css (or compiled Tailwind CSS)
+      # are already committed directly into the 'backend/static/' folder in your repository.
+      # Example: YourRepo/backend/static/index.html
 
       - name: Build Windows executable with PyInstaller
         run: |
           pyinstaller --onefile --noconsole --add-data "backend/static;static" backend/app.py
+        shell: pwsh # Use PowerShell for PyInstaller command
         working-directory: ${{ github.workspace }} # Run from the repository root
 
       - name: Upload executable as artifact
@@ -56,11 +53,5 @@ jobs:
           path: dist/app.exe # Path to your generated .exe file
           retention-days: 7 # Keep the artifact for 7 days (optional)
 
-      - name: Clean up build directories (optional)
-        # Cleans up the build and dist folders to keep the workspace tidy
-        if: always()
-        run: |
-          rmdir /s /q build
-          rmdir /s /q dist
-        shell: cmd
-        working-directory: ${{ github.workspace }}
+      # NOTE: The 'Clean up build directories' step has been removed.
+      # GitHub Actions automatically cleans up the runner's workspace after each job.
