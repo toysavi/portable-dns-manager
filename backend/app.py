@@ -1,4 +1,4 @@
-# app.py - Python Flask Backend for Portable DNS Manager
+# backend/app.py - Python Flask Backend with Embedded PyQt5 GUI
 
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
@@ -6,14 +6,21 @@ import os
 import json
 import time
 import random
+import sys
+import threading
+import webbrowser # To open the browser if the app is not frozen
+
+# PyQt5 imports for the GUI
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QLabel
+from PyQt5.QtWebEngineWidgets import QWebEngineView
+from PyQt5.QtCore import QUrl, QThread, pyqtSignal
 
 # --- Flask App Setup ---
 # Configure Flask to serve static files from the 'static' directory
 # and templates (if you had any, though not strictly needed for a single HTML file)
-app = Flask(__name__, static_folder='static', static_url_path='') # Serve static files directly from root URL
-# Allow CORS for your frontend running on a different origin (e.g., localhost:5000 for frontend)
-# In a production environment, restrict this to your specific frontend origin.
-CORS(app)
+# The static_url_path='' makes it serve from the root, e.g., /index.html
+app = Flask(__name__, static_folder='static', static_url_path='')
+CORS(app) # Allow CORS for the embedded web engine
 
 # --- In-memory Data Store (for simulation purposes only) ---
 # In a real app, this would interact with Active Directory DNS
@@ -45,13 +52,12 @@ def log_action(level, message, user="Backend"):
     audit_log.append(log_entry)
     print(log_entry) # Also print to console for debugging
 
-# --- Frontend Serving Endpoint ---
+# --- Flask API Endpoints ---
+
 @app.route('/')
 def serve_index():
     """Serves the main index.html file."""
     return send_from_directory(app.static_folder, 'index.html')
-
-# --- API Endpoints (rest of your existing backend code) ---
 
 @app.route('/api/connect', methods=['POST'])
 def connect():
@@ -266,31 +272,68 @@ def get_audit_logs():
     log_action("INFO", "Audit logs requested.")
     return jsonify({"logs": audit_log}), 200
 
-# --- Running the Flask App ---
+# --- Flask Server Thread ---
+class FlaskThread(QThread):
+    """Thread to run the Flask development server."""
+    def run(self):
+        # Use a specific port, e.g., 5000, for the frontend to connect to.
+        # debug=False for production build to avoid reloader issues with PyInstaller.
+        app.run(port=5000, debug=False, use_reloader=False)
+
+# --- PyQt5 GUI Setup ---
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Portable DNS Manager")
+        self.setGeometry(100, 100, 1200, 800) # Initial window size
+
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+        layout = QVBoxLayout(central_widget)
+
+        self.browser = QWebEngineView()
+        layout.addWidget(self.browser)
+
+        # Determine the path to index.html when running from PyInstaller or locally
+        if getattr(sys, 'frozen', False):
+            # Running as a PyInstaller executable
+            # sys._MEIPASS is the path to the temporary folder where PyInstaller extracts bundled files.
+            html_path = os.path.join(sys._MEIPASS, 'static', 'index.html')
+        else:
+            # Running in development mode (e.g., from PyCharm)
+            # Assumes app.py is in 'backend' and index.html is in 'backend/static'
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            html_path = os.path.join(current_dir, 'static', 'index.html')
+
+        # Load the local HTML file
+        self.browser.setUrl(QUrl.fromLocalFile(html_path))
+
+        # Optional: Connect to a signal for when the page is loaded (useful for debugging)
+        self.browser.loadFinished.connect(self.on_load_finished)
+
+    def on_load_finished(self, ok):
+        if ok:
+            log_action("INFO", "Frontend GUI loaded successfully in QWebEngineView.")
+        else:
+            log_action("ERROR", "Failed to load frontend GUI in QWebEngineView.", user="GUI")
+
+# --- Main Application Entry Point ---
 if __name__ == '__main__':
-    # When packaged with PyInstaller, the app might run from a temporary directory.
-    # We need to ensure Flask knows where its static files are.
-    # For PyInstaller, sys._MEIPASS is the path to the temporary folder where
-    # PyInstaller extracts bundled files.
-    if getattr(sys, 'frozen', False): # Check if running as a PyInstaller executable
-        template_folder = os.path.join(sys._MEIPASS, 'static')
-        static_folder = os.path.join(sys._MEIPASS, 'static')
-        app = Flask(__name__, template_folder=template_folder, static_folder=static_folder, static_url_path='')
-    else:
-        # Normal development mode
-        app = Flask(__name__, static_folder='static', static_url_path='')
+    # 1. Start Flask server in a separate thread
+    flask_thread = FlaskThread()
+    flask_thread.start()
+    log_action("INFO", "Flask server thread started.")
 
-    # Re-apply CORS after Flask app re-initialization if frozen
-    CORS(app)
+    # Give Flask a moment to start up before the GUI tries to connect
+    time.sleep(1)
 
-    # Re-define routes after app re-initialization if frozen
-    # This is a bit clunky, but necessary if app is re-initialized.
-    # A better pattern for complex apps is to define routes in a separate module
-    # and then import/register them. For this example, we'll just redefine.
-    # (You would copy all your @app.route definitions here again or refactor)
-    # For simplicity, let's assume the routes are defined globally or after app creation.
-    # The current structure with routes defined globally before __name__ == '__main__' block is fine.
+    # 2. Start PyQt GUI
+    app_gui = QApplication(sys.argv)
+    main_window = MainWindow()
+    main_window.show()
 
-    log_action("INFO", "Flask backend starting...")
-    # It will run on http://127.0.0.1:5000 by default
-    app.run(debug=True, port=5000) # Ensure a consistent port for frontend to call
+    # Handle application exit: stop Flask thread gracefully (optional, but good practice)
+    app_gui.aboutToQuit.connect(flask_thread.quit) # Signal Flask thread to quit
+    app_gui.aboutToQuit.connect(flask_thread.wait) # Wait for Flask thread to finish
+
+    sys.exit(app_gui.exec_())
